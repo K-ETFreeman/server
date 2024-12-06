@@ -534,7 +534,25 @@ class LadderService(Service):
             pool = queue.get_map_pool_for_rating(rating)
             if not pool:
                 raise RuntimeError(f"No map pool available for rating {rating}!")
-            game_map = pool.choose_map(played_map_ids)
+            
+            pool, _, _, veto_tokens_per_player, max_tokens_per_map, minimum_maps_after_veto = queue.map_pools[pool.id]
+
+            vetoesMap = defaultdict(int)
+            tokensTotalPerPlayer = defaultdict(int)
+
+            for (id, map) in pool.maps.items():
+                for player in all_players:
+                    vetoesMap[map.map_pool_map_version_id] += player.vetoes.get(map.map_pool_map_version_id, 0)
+                    tokensTotalPerPlayer[player.id] += player.vetoes.get(map.map_pool_map_version_id, 0)
+
+            for player in all_players:
+                if (tokensTotalPerPlayer[player.id] > veto_tokens_per_player):
+                    raise RuntimeError(f"Player {player.id} has too many vetoes!")
+
+            if (max_tokens_per_map == 0):
+                max_tokens_per_map = self.calculate_dynamic_tokens_per_map(minimum_maps_after_veto, vetoesMap.values())
+
+            game_map = pool.choose_map(played_map_ids, vetoesMap, max_tokens_per_map)
 
             game = self.game_service.create_game(
                 game_class=LadderGame,
@@ -684,6 +702,26 @@ class LadderService(Service):
                 if player not in connected_players
             ])
 
+    def calculate_dynamic_tokens_per_map(self, M: float, tokens: list[int]) -> float:
+        sorted_tokens = sorted(tokens)
+        if (sorted_tokens.count(0) >= M):
+            return 1
+
+        result = 1; last = 0; index = 0
+        while (index < len(sorted_tokens)): 
+            (index, last) = next(((i, el) for i, el in enumerate(sorted_tokens) if el > last), (len(sorted_tokens) - 1, sorted_tokens[-1]))
+            index += 1
+            divider = index - M
+            if (divider <= 0): 
+                continue
+            
+            result = sum(sorted_tokens[:index]) / divider
+            upperLimit = sorted_tokens[index] if index < len(sorted_tokens) else float('inf')
+            if (result <= upperLimit):
+                return result
+                
+        raise Exception("Failed to calculate dynamic tokens per map: impossible vetoes setup")
+    
     async def get_game_history(
         self,
         players: list[Player],
