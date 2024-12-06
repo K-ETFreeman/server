@@ -40,6 +40,7 @@ class MapPoolMap(Protocol):
 
 class Map(NamedTuple):
     id: Optional[int]
+    map_pool_map_version_id: Optional[int]
     folder_name: str
     ranked: bool = False
     # Map pool only
@@ -60,6 +61,7 @@ class Map(NamedTuple):
 
 class NeroxisGeneratedMap(NamedTuple):
     id: int
+    map_pool_map_version_id: Optional[int]
     version: str
     spawns: int
     map_size_pixels: int
@@ -137,6 +139,7 @@ class NeroxisGeneratedMap(NamedTuple):
 # the map argument in unit tests.
 MAP_DEFAULT = Map(
     id=None,
+    map_pool_map_version_id=None,
     folder_name="scmp_007",
     ranked=False,
 )

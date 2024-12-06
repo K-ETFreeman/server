@@ -48,6 +48,7 @@ class Player:
         lobby_connection: Optional["LobbyConnection"] = None
     ) -> None:
         self._faction = Faction.uef
+        self._vetoes = {}
 
         self.id = player_id
         self.login = login
@@ -88,6 +89,18 @@ class Player:
             self._faction = value
         else:
             self._faction = Faction.from_value(value)
+
+    @property
+    def vetoes(self) -> dict[int, int]:
+        return self._vetoes
+
+    @vetoes.setter
+    def vetoes(self, value: dict[int, int]) -> None:
+        if not isinstance(value, dict):
+            raise ValueError("Vetoes must be a dictionary")
+        if not all(isinstance(key, int) and isinstance(val, int) for key, val in value.items()):
+            raise ValueError("Vetoes dictionary must contain only integer keys and values")
+        self._vetoes = value            
 
     def power(self) -> int:
         """An artifact of the old permission system. The client still uses this

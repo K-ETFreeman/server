@@ -100,7 +100,7 @@ class LadderService(Service):
                 queue.team_size = info["team_size"]
                 queue.rating_peak = await self.fetch_rating_peak(info["rating_type"])
             queue.map_pools.clear()
-            for map_pool_id, min_rating, max_rating in info["map_pools"]:
+            for map_pool_id, min_rating, max_rating, veto_tokens_per_player, max_tokens_per_map, minimum_maps_after_veto in info["map_pools"]:
                 map_pool_name, map_list = map_pool_maps[map_pool_id]
                 if not map_list:
                     self._logger.warning(
@@ -112,7 +112,10 @@ class LadderService(Service):
                 queue.add_map_pool(
                     MapPool(map_pool_id, map_pool_name, map_list),
                     min_rating,
-                    max_rating
+                    max_rating,
+                    veto_tokens_per_player, 
+                    max_tokens_per_map, 
+                    minimum_maps_after_veto
                 )
         # Remove queues that don't exist anymore
         for queue_name in list(self.queues.keys()):
@@ -125,6 +128,7 @@ class LadderService(Service):
             select(
                 map_pool.c.id,
                 map_pool.c.name,
+                map_pool_map_version.c.id.label("map_pool_map_version_id"),
                 map_pool_map_version.c.weight,
                 map_pool_map_version.c.map_params,
                 map_version.c.id.label("map_id"),
@@ -150,6 +154,7 @@ class LadderService(Service):
                 map_list.append(
                     Map(
                         id=row.map_id,
+                        map_pool_map_version_id=row.map_pool_map_version_id,
                         folder_name=folder_name,
                         ranked=row.ranked,
                         weight=row.weight,
@@ -191,6 +196,9 @@ class LadderService(Service):
                 matchmaker_queue_map_pool.c.map_pool_id,
                 matchmaker_queue_map_pool.c.min_rating,
                 matchmaker_queue_map_pool.c.max_rating,
+                matchmaker_queue_map_pool.c.veto_tokens_per_player,
+                matchmaker_queue_map_pool.c.max_tokens_per_map,
+                matchmaker_queue_map_pool.c.minimum_maps_after_veto,
                 game_featuredMods.c.gamemod,
                 leaderboard.c.technical_name.label("rating_type")
             )
@@ -219,7 +227,10 @@ class LadderService(Service):
                 info["map_pools"].append((
                     row.map_pool_id,
                     row.min_rating,
-                    row.max_rating
+                    row.max_rating,
+                    row.veto_tokens_per_player,
+                    row.max_tokens_per_map,
+                    row.minimum_maps_after_veto
                 ))
             except Exception:
                 self._logger.warning(

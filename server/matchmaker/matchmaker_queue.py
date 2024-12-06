@@ -50,7 +50,7 @@ class MatchmakerQueue:
         rating_type: str,
         team_size: int = 1,
         params: Optional[dict[str, Any]] = None,
-        map_pools: Iterable[tuple[MapPool, Optional[int], Optional[int]]] = (),
+        map_pools: Iterable[tuple[MapPool, Optional[int], Optional[int], int, int, float]] = (),
     ):
         self.game_service = game_service
         self.name = name
@@ -78,12 +78,15 @@ class MatchmakerQueue:
         self,
         map_pool: MapPool,
         min_rating: Optional[int],
-        max_rating: Optional[int]
+        max_rating: Optional[int],
+        veto_tokens_per_player: int,
+        max_tokens_per_map: int,
+        minimum_maps_after_veto: float,
     ) -> None:
-        self.map_pools[map_pool.id] = (map_pool, min_rating, max_rating)
+        self.map_pools[map_pool.id] = (map_pool, min_rating, max_rating, veto_tokens_per_player, max_tokens_per_map, minimum_maps_after_veto)
 
     def get_map_pool_for_rating(self, rating: float) -> Optional[MapPool]:
-        for map_pool, min_rating, max_rating in self.map_pools.values():
+        for map_pool, min_rating, max_rating, _, _, _ in self.map_pools.values():
             if min_rating is not None and rating < min_rating:
                 continue
             if max_rating is not None and rating > max_rating:

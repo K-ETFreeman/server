@@ -1315,6 +1315,10 @@ class LobbyConnection:
 
         self.party_service.set_factions(self.player, list(factions))
 
+    async def command_set_player_vetoes(self, message):
+        converted =  {v['map_pool_map_version_id']: v['veto_tokens_applied'] for v in message["vetoes"]}
+        self.player.vetoes = converted
+
     async def send_warning(self, message: str, fatal: bool = False):
         """
         Display a warning message to the client
