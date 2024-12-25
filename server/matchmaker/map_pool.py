@@ -57,7 +57,7 @@ class MapPool(object):
         least_common_ids = {id_ for id_, _ in least_common}     
         
         #multiply weight by 2 if map is least common and not vetoed by anyone
-        mapList = list((map.map_pool_map_version_id, map, 2 if (map.id in least_common_ids) and (vetoesMap.get(map.map_pool_map_version_id) == 0) else 1) for id, map in self.maps.items())
+        mapList = list((map.map_pool_map_version_id, map, 2 if (map.id in least_common_ids) and (vetoesMap.get(map.map_pool_map_version_id,0) == 0) else 1) for id, map in self.maps.items())
         
         weights = [max(0, (1 - vetoesMap.get(id, 0) / max_tokens_per_map) * map.weight * least_common_multiplier) for id, map, least_common_multiplier in mapList]
         map = random.choices(mapList, weights=weights, k=1)[0][1]

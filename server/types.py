@@ -94,8 +94,10 @@ class NeroxisGeneratedMap(NamedTuple):
             raise Exception("spawns is not a multiple of 2")
 
         version = params["version"]
+        map_pool_map_version_id = params["map_pool_map_version_id"]
         return cls(
             cls._get_id(version, spawns, map_size_pixels),
+            map_pool_map_version_id,
             version,
             spawns,
             map_size_pixels,

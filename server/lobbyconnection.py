@@ -1317,7 +1317,7 @@ class LobbyConnection:
 
     async def command_set_player_vetoes(self, message):
         converted =  {v['map_pool_map_version_id']: v['veto_tokens_applied'] for v in message["vetoes"]}
-        self.player.vetoes = converted
+        await self.player.update_vetoes(self.ladder_service.get_pools_veto_data(), converted)
 
     async def send_warning(self, message: str, fatal: bool = False):
         """

@@ -33,6 +33,7 @@ from server.db.models import (
 from server.decorators import with_logger
 from server.exceptions import DisabledError
 from server.game_service import GameService
+from server.player_service import PlayerService
 from server.games import InitMode, LadderGame
 from server.games.ladder_game import GameClosedError
 from server.ladder_service.game_name import game_name
@@ -59,11 +60,13 @@ class LadderService(Service):
         self,
         database: FAFDatabase,
         game_service: GameService,
+        player_service: PlayerService,
         violation_service: ViolationService,
     ):
         self._db = database
         self._informed_players: set[Player] = set()
         self.game_service = game_service
+        self.player_service = player_service
         self.queues = {}
         self.violation_service = violation_service
 
@@ -75,6 +78,7 @@ class LadderService(Service):
         self._update_cron = aiocron.crontab("*/10 * * * *", func=self.update_data)
 
     async def update_data(self) -> None:
+        prev_pools_veto_data = self.get_pools_veto_data()
         async with self._db.acquire() as conn:
             map_pool_maps = await self.fetch_map_pools(conn)
             db_queues = await self.fetch_matchmaker_queues(conn)
@@ -122,6 +126,10 @@ class LadderService(Service):
             if queue_name not in db_queues:
                 self.queues[queue_name].shutdown()
                 del self.queues[queue_name]
+        current_pools_veto_data = self.get_pools_veto_data()
+        if (current_pools_veto_data != prev_pools_veto_data):
+            for player in self.player_service.all_players:
+                await player.update_vetoes(current_pools_veto_data)
 
     async def fetch_map_pools(self, conn) -> dict[int, tuple[str, list[Map]]]:
         result = await conn.execute(
@@ -164,6 +172,7 @@ class LadderService(Service):
                 try:
                     params = json.loads(row.map_params)
                     map_type = params["type"]
+                    params.map_pool_map_version_id = row.map_pool_map_version_id
                     if map_type == "neroxis":
                         map_list.append(
                             NeroxisGeneratedMap.of(params, row.weight)
@@ -538,19 +547,17 @@ class LadderService(Service):
             pool, _, _, veto_tokens_per_player, max_tokens_per_map, minimum_maps_after_veto = queue.map_pools[pool.id]
 
             vetoesMap = defaultdict(int)
-            tokensTotalPerPlayer = defaultdict(int)
 
             for (id, map) in pool.maps.items():
                 for player in all_players:
                     vetoesMap[map.map_pool_map_version_id] += player.vetoes.get(map.map_pool_map_version_id, 0)
-                    tokensTotalPerPlayer[player.id] += player.vetoes.get(map.map_pool_map_version_id, 0)
-
-            for player in all_players:
-                if (tokensTotalPerPlayer[player.id] > veto_tokens_per_player):
-                    raise RuntimeError(f"Player {player.id} has too many vetoes!")
 
             if (max_tokens_per_map == 0):
                 max_tokens_per_map = self.calculate_dynamic_tokens_per_map(minimum_maps_after_veto, vetoesMap.values())
+                if (max_tokens_per_map == 0):
+                    self._logger.error("calculate_dynamic_tokens_per_map received impossible vetoes setup, all vetoes cancelled for a match")
+                    vetoesMap = {}
+                    max_tokens_per_map = 1
 
             game_map = pool.choose_map(played_map_ids, vetoesMap, max_tokens_per_map)
 
@@ -720,8 +727,15 @@ class LadderService(Service):
             if (result <= upperLimit):
                 return result
                 
-        raise Exception("Failed to calculate dynamic tokens per map: impossible vetoes setup")
+        return 0
     
+    def get_pools_veto_data(self) -> list[tuple[list[int], int, int]]:
+        result = []
+        for queue in self.queues.values():
+            for map_pool, min_rating, max_rating, veto_tokens_per_player, max_tokens_per_map, minimum_maps_after_veto in queue.map_pools.values():
+                result.append(([map.map_pool_map_version_id for map in map_pool.maps.values()], veto_tokens_per_player, max_tokens_per_map))
+        return result
+
     async def get_game_history(
         self,
         players: list[Player],
