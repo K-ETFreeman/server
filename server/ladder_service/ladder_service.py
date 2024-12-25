@@ -33,7 +33,6 @@ from server.db.models import (
 from server.decorators import with_logger
 from server.exceptions import DisabledError
 from server.game_service import GameService
-from server.player_service import PlayerService
 from server.games import InitMode, LadderGame
 from server.games.ladder_game import GameClosedError
 from server.ladder_service.game_name import game_name
@@ -45,6 +44,7 @@ from server.matchmaker import (
     Search
 )
 from server.metrics import MatchLaunch
+from server.player_service import PlayerService
 from server.players import Player, PlayerState
 from server.types import GameLaunchOptions, Map, NeroxisGeneratedMap
 
@@ -543,14 +543,14 @@ class LadderService(Service):
             pool = queue.get_map_pool_for_rating(rating)
             if not pool:
                 raise RuntimeError(f"No map pool available for rating {rating}!")
-            
+
             pool, _, _, _, max_tokens_per_map, minimum_maps_after_veto = queue.map_pools[pool.id]
 
             vetoesMap = defaultdict(int)
 
-            for map in pool.maps.values():
+            for m in pool.maps.values():
                 for player in all_players:
-                    vetoesMap[map.map_pool_map_version_id] += player.vetoes.get(map.map_pool_map_version_id, 0)
+                    vetoesMap[m.map_pool_map_version_id] += player.vetoes.get(m.map_pool_map_version_id, 0)
 
             if (max_tokens_per_map == 0):
                 max_tokens_per_map = self.calculate_dynamic_tokens_per_map(minimum_maps_after_veto, vetoesMap.values())
@@ -713,7 +713,7 @@ class LadderService(Service):
         sorted_tokens = sorted(tokens)
         if (sorted_tokens.count(0) >= M):
             return 1
-        
+
         result = 1
         last = 0
         index = 0
@@ -723,14 +723,14 @@ class LadderService(Service):
             divider = index - M
             if (divider <= 0):
                 continue
-            
+
             result = sum(sorted_tokens[:index]) / divider
             upperLimit = sorted_tokens[index] if index < len(sorted_tokens) else float("inf")
             if (result <= upperLimit):
                 return result
-        
+
         return 0
-    
+
     def get_pools_veto_data(self) -> list[tuple[list[int], int, int]]:
         result = []
         for queue in self.queues.values():

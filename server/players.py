@@ -110,7 +110,7 @@ class Player:
         for (map_pool_map_version_ids, veto_tokens_per_player, max_tokens_per_map) in pools_vetodata:
             tokens_sum = 0
             for map_id in map_pool_map_version_ids:
-                new_tokens_applied = max(current.get(map_id, 0),0)
+                new_tokens_applied = max(current.get(map_id, 0), 0)
                 if (tokens_sum + new_tokens_applied > veto_tokens_per_player):
                     new_tokens_applied = veto_tokens_per_player - tokens_sum
                 if (max_tokens_per_map > 0 and new_tokens_applied > max_tokens_per_map):
