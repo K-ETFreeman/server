@@ -52,7 +52,7 @@ class MapPool(object):
                 least_common = least_common[:i]
                 break
 
-        least_common_ids = {id_ for id_, _ in least_common}     
+        least_common_ids = {id_ for id_, _ in least_common}
 
         # Multiply weight by 2 if map is least common and not vetoed by anyone
         mapList = list((map.map_pool_map_version_id, map, 2 if (map.id in least_common_ids) and (vetoesMap.get(map.map_pool_map_version_id, 0) == 0) else 1) for id, map in self.maps.items())
