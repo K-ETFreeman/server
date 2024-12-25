@@ -117,8 +117,8 @@ class LadderService(Service):
                     MapPool(map_pool_id, map_pool_name, map_list),
                     min_rating,
                     max_rating,
-                    veto_tokens_per_player, 
-                    max_tokens_per_map, 
+                    veto_tokens_per_player,
+                    max_tokens_per_map,
                     minimum_maps_after_veto
                 )
         # Remove queues that don't exist anymore
@@ -544,11 +544,11 @@ class LadderService(Service):
             if not pool:
                 raise RuntimeError(f"No map pool available for rating {rating}!")
             
-            pool, _, _, veto_tokens_per_player, max_tokens_per_map, minimum_maps_after_veto = queue.map_pools[pool.id]
+            pool, _, _, _, max_tokens_per_map, minimum_maps_after_veto = queue.map_pools[pool.id]
 
             vetoesMap = defaultdict(int)
 
-            for (id, map) in pool.maps.items():
+            for map in pool.maps.values():
                 for player in all_players:
                     vetoesMap[map.map_pool_map_version_id] += player.vetoes.get(map.map_pool_map_version_id, 0)
 
@@ -713,27 +713,29 @@ class LadderService(Service):
         sorted_tokens = sorted(tokens)
         if (sorted_tokens.count(0) >= M):
             return 1
-
-        result = 1; last = 0; index = 0
-        while (index < len(sorted_tokens)): 
+        
+        result = 1
+        last = 0
+        index = 0
+        while (index < len(sorted_tokens)):
             (index, last) = next(((i, el) for i, el in enumerate(sorted_tokens) if el > last), (len(sorted_tokens) - 1, sorted_tokens[-1]))
             index += 1
             divider = index - M
-            if (divider <= 0): 
+            if (divider <= 0):
                 continue
             
             result = sum(sorted_tokens[:index]) / divider
-            upperLimit = sorted_tokens[index] if index < len(sorted_tokens) else float('inf')
+            upperLimit = sorted_tokens[index] if index < len(sorted_tokens) else float("inf")
             if (result <= upperLimit):
                 return result
-                
+        
         return 0
     
     def get_pools_veto_data(self) -> list[tuple[list[int], int, int]]:
         result = []
         for queue in self.queues.values():
-            for map_pool, min_rating, max_rating, veto_tokens_per_player, max_tokens_per_map, minimum_maps_after_veto in queue.map_pools.values():
-                result.append(([map.map_pool_map_version_id for map in map_pool.maps.values()], veto_tokens_per_player, max_tokens_per_map))
+            for pool, _, _, veto_tokens_per_player, max_tokens_per_map, _ in queue.map_pools.values():
+                result.append(([map.map_pool_map_version_id for map in pool.maps.values()], veto_tokens_per_player, max_tokens_per_map))
         return result
 
     async def get_game_history(

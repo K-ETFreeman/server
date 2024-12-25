@@ -100,24 +100,26 @@ class Player:
             raise ValueError("Vetoes must be a dictionary")
         if not all(isinstance(key, int) and isinstance(val, int) and val >= 0 for key, val in value.items()):
             raise ValueError("Incorrect vetoes dictonary")
-        self._vetoes = value            
+        self._vetoes = value
 
     async def update_vetoes(self, pools_vetodata: list[tuple[list[int], int, int]], current: dict = None) -> None:
         if current is None:
             current = self.vetoes
         fixedVetoes = {}
-        vetoDatas = [] 
+        vetoDatas = []
         for (map_pool_map_version_ids, veto_tokens_per_player, max_tokens_per_map) in pools_vetodata:
-            sum = 0
-            for id in map_pool_map_version_ids:
-                new_tokens_applied = max(current.get(id, 0),0)
-                if (sum + new_tokens_applied > veto_tokens_per_player or (max_tokens_per_map > 0 and new_tokens_applied > max_tokens_per_map)):
-                    new_tokens_applied = min(veto_tokens_per_player - sum, max_tokens_per_map)
+            tokens_sum = 0
+            for map_id in map_pool_map_version_ids:
+                new_tokens_applied = max(current.get(map_id, 0),0)
+                if (tokens_sum + new_tokens_applied > veto_tokens_per_player):
+                    new_tokens_applied = veto_tokens_per_player - tokens_sum
+                if (max_tokens_per_map > 0 and new_tokens_applied > max_tokens_per_map):
+                    new_tokens_applied = max_tokens_per_map
                 if (new_tokens_applied == 0):
                     continue
-                vetoDatas.append({"map_pool_map_version_id": id, "veto_tokens_applied": new_tokens_applied})
-                fixedVetoes[id] = new_tokens_applied
-                sum += new_tokens_applied
+                vetoDatas.append({"map_pool_map_version_id": map_id, "veto_tokens_applied": new_tokens_applied})
+                fixedVetoes[map_id] = new_tokens_applied
+                tokens_sum += new_tokens_applied
         if fixedVetoes == self.vetoes == current:
             return
         self.vetoes = fixedVetoes
