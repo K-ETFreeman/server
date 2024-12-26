@@ -40,11 +40,11 @@ class MapPoolMap(Protocol):
 
 class Map(NamedTuple):
     id: Optional[int]
-    map_pool_map_version_id: Optional[int]
     folder_name: str
     ranked: bool = False
     # Map pool only
     weight: int = 1
+    map_pool_map_version_id: Optional[int] = None
 
     @property
     def file_path(self):
