@@ -172,10 +172,9 @@ class LadderService(Service):
                 try:
                     params = json.loads(row.map_params)
                     map_type = params["type"]
-                    params.map_pool_map_version_id = row.map_pool_map_version_id
                     if map_type == "neroxis":
                         map_list.append(
-                            NeroxisGeneratedMap.of(params, row.weight)
+                            NeroxisGeneratedMap.of(params, row.weight, row.map_pool_map_version_id)
                         )
                     else:
                         self._logger.warning(

@@ -77,7 +77,7 @@ class NeroxisGeneratedMap(NamedTuple):
         return cls._NAME_PATTERN.fullmatch(folder_name) is not None
 
     @classmethod
-    def of(cls, params: dict, weight: int = 1):
+    def of(cls, params: dict, weight: int = 1, map_pool_map_version_id: Optional[int] = None):
         """Create a NeroxisGeneratedMap from params dict"""
         assert params["type"] == "neroxis"
 
@@ -94,14 +94,13 @@ class NeroxisGeneratedMap(NamedTuple):
             raise Exception("spawns is not a multiple of 2")
 
         version = params["version"]
-        map_pool_map_version_id = params["map_pool_map_version_id"]
         return cls(
             cls._get_id(version, spawns, map_size_pixels),
-            map_pool_map_version_id,
             version,
             spawns,
             map_size_pixels,
             weight,
+            map_pool_map_version_id,
         )
 
     @staticmethod
