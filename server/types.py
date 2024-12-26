@@ -61,11 +61,11 @@ class Map(NamedTuple):
 
 class NeroxisGeneratedMap(NamedTuple):
     id: int
-    map_pool_map_version_id: Optional[int]
     version: str
     spawns: int
     map_size_pixels: int
     weight: int = 1
+    map_pool_map_version_id: Optional[int] = None
 
     _NAME_PATTERN = re.compile(
         "neroxis_map_generator_([0-9.]+)_([a-z2-7]+)_([a-z2-7]+)"
