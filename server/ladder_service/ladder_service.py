@@ -784,7 +784,7 @@ class LadderService(Service):
             and our X equation would have lower border of X ofcourse
             T = (B + 2C + XD) / (D + B + C + A - M)
             now lets prove that T > X:
-            lets assume that T < X 
+            lets assume that T < X
             (B + 2C + XD) / (D + B + C + A - M) < X
             B + 2C + XD < XD + XB + XC + XA - XM
             B + 2C < XB + XC + XA - XM
@@ -801,7 +801,7 @@ class LadderService(Service):
            1) sorting tokens applied in ascending order
            cycle:
              2) including next bunch of maps (with the same tokens applied value) to our group
-             3) checking if tokens_sum == 0 
+             3) checking if tokens_sum == 0
                 then its case 1, and return 1 if maps_balance > 0
              4) otherwise
                 solving equation for current group
@@ -811,7 +811,7 @@ class LadderService(Service):
     def calculate_dynamic_tokens_per_map(self, M: float, tokens: Iterable[int]) -> float:
         sorted_tokens = sorted(tokens)
         # adding infinity as last upper border
-        sorted_tokens.append(float('inf'))
+        sorted_tokens.append(float("inf"))
         # t is the maximum amount of tokens applied to any single map in current group
         t = 0
         tokens_sum = 0
