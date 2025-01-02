@@ -712,8 +712,9 @@ class LadderService(Service):
                 player for player in guests
                 if player not in connected_players
             ])
+        
 
-    """
+    '''
         function finds minimal max_tokens_per_map > 0 for given M (minimal_maps_after_veto) > 0 and [iterable] of veto tokens applied for each map in the bracket
         max_tokens_per_map - is the amount of veto_tokens required to fully ban a map
         minimal_maps_after_veto - minimal sum of map weights, anything lower is forbidden (for map diversity purpuses)
@@ -722,7 +723,7 @@ class LadderService(Service):
         then weight of map with V tokens applied is max((T - V) / T, 0)
 
         example: lets say we have A maps with 0 tokens applied, B Maps with 1 token, C Maps with 2 tokens
-        the inequality to be true:
+        the inequality to be true: 
         A * max((T - 0) / T, 0) + B * max((T - 1) / T, 0) + C * max((T - 2) / T, 0) >= M
 
         max((T - 0) / T, 0) is always 1, so:
@@ -770,18 +771,18 @@ class LadderService(Service):
                     its basically 0A + 1B in case 2, and 0A + 1B + 2C in case 3, you can return to A B C definitions above to be sure
             note 2: denominator is the same as in case 2, map balance. Again, A - M is negative, so B + C + A - M < B + C
             let prove that there is no need to worry about lower border, again:
-            lets assume that (B + 2C) / (B + C + A - M) < 2
+            lets assume that (B + 2C) / (B + C + A - M) < 2 
             then B + 2C < 2B + 2C + 2A - 2M
-            then B < 2B + 2A - 2M
+            then B < 2B + 2A - 2M 
             which is contradicts with [2], so again, we can just replace >= with = :
             T = (B + 2C) / (B + C + A - M)
             just calulating it and return the value
-
-
+        
+            
         case X)
             if we had some number D of maps with X tokens, and in case 3 we received result more than X (and discarded it due to exceeding upper border), then we would say that
             [3] (B + 2C) / (B + C + A - M) > X which is the same as B + 2C > XB + XC + XA - XM
-            and our X equation would have lower border of X ofcourse
+            and our X equation would have lower border of X ofcourse 
             T = (B + 2C + XD) / (D + B + C + A - M)
             now lets prove that T > X:
             lets assume that T < X 
@@ -791,7 +792,7 @@ class LadderService(Service):
             which is contradicts with [3]
             so, we just proved that we should not worry about lower border in any case
             and just solve equations and not inequality for each case except case 1
-
+            
         notices:
            1) in every case except case 1, nominator is just sum of tokens applied to all maps in equation
             and denominator is map balance
@@ -799,7 +800,7 @@ class LadderService(Service):
 
         conclusion: whole solution process is
            1) sorting tokens applied in ascending order
-           cycle:
+           cycle: 
              2) including next bunch of maps (with the same tokens applied value) to our group
              3) checking if tokens_sum == 0 
                 then its case 1, and return 1 if maps_balance > 0
@@ -807,7 +808,8 @@ class LadderService(Service):
                 solving equation for current group
                 and checking the result vs upper border
                 and upper border is equal to the amount of tokens applied to the map next to last map in our group, or infinity if there is no such one
-    """
+
+    '''
     def calculate_dynamic_tokens_per_map(self, M: float, tokens: Iterable[int]) -> float:
         sorted_tokens = sorted(tokens)
         # adding infinity as last upper border
@@ -839,7 +841,7 @@ class LadderService(Service):
         for queue in self.queues.values():
             for pool, *_, veto_tokens_per_player, max_tokens_per_map, minimum_maps_after_veto in queue.map_pools.values():
                 if max_tokens_per_map == 0 and minimum_maps_after_veto >= len(pool.maps.values()) \
-                   or max_tokens_per_map != 0 and queue.team_size * 2 * veto_tokens_per_player / max_tokens_per_map > len(pool.maps.values()) - minimum_maps_after_veto:
+                    or max_tokens_per_map != 0 and queue.team_size * 2 * veto_tokens_per_player / max_tokens_per_map > len(pool.maps.values()) - minimum_maps_after_veto:
                     veto_tokens_per_player = 0
                     max_tokens_per_map = 1
                     minimum_maps_after_veto = 1
