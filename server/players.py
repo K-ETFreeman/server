@@ -7,6 +7,7 @@ from contextlib import suppress
 from enum import Enum, unique
 from typing import Optional, Union
 
+from .types import MatchmakerQueueMapPoolVetoData
 from .factions import Faction
 from .protocol import DisconnectedError
 from .rating import Leaderboard, PlayerRatings, RatingType
@@ -102,12 +103,12 @@ class Player:
             raise ValueError("Incorrect vetoes dictonary")
         self._vetoes = value
 
-    async def update_vetoes(self, pools_vetodata: list[tuple[list[int], int, int]], current: dict = None) -> None:
+    async def update_vetoes(self, pools_vetodata: list[MatchmakerQueueMapPoolVetoData], current: dict = None) -> None:
         if current is None:
             current = self.vetoes
         fixedVetoes = {}
         vetoDatas = []
-        for (map_pool_map_version_ids, veto_tokens_per_player, max_tokens_per_map) in pools_vetodata:
+        for (map_pool_map_version_ids, veto_tokens_per_player, max_tokens_per_map, _) in pools_vetodata:
             tokens_sum = 0
             for map_id in map_pool_map_version_ids:
                 new_tokens_applied = max(current.get(map_id, 0), 0)
